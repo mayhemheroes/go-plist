@@ -1,0 +1,4 @@
+project: go-plist
+target: go-plist-
+cmds:
+  - cmd: ./.libfuzzer
