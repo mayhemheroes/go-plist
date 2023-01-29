@@ -5,11 +5,11 @@ ARG fuzzTargetPath=''
 ADD . ${project}
 WORKDIR ${project}/${fuzzTargetPath}
 RUN go get -u github.com/dvyukov/go-fuzz/go-fuzz@latest github.com/dvyukov/go-fuzz/go-fuzz-build@latest
-RUN GO_ENABLED=0 go-fuzz-build -libfuzzer -o /.a .
+RUN GO_ENABLED=0 go-fuzz-build -libfuzzer -o /decoder-fuzz.a .
 
 FROM silkeh/clang:latest as sanitizer
-COPY --from=gofuzzbuilder /.a .a
-RUN clang -fsanitize=fuzzer /.a -o /.libfuzzer
+COPY --from=gofuzzbuilder /decoder-fuzz.a decoder-fuzz.a
+RUN clang -fsanitize=fuzzer /decoder-fuzz.a -o /decoder-fuzz.libfuzzer
 
 FROM ubuntu:20.04
-COPY --from=sanitizer /.libfuzzer /
+COPY --from=sanitizer /decoder-fuzz.libfuzzer /
