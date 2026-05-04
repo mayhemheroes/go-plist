@@ -1,15 +1,11 @@
-FROM golang:1.23.13 as gofuzzbuilder
-ARG project='go-plist'
-ARG fuzzTargetPath=''
+FROM golang:1.23 AS builder
 
-ADD . ${project}
-WORKDIR ${project}/${fuzzTargetPath}
-RUN go get -u github.com/dvyukov/go-fuzz/go-fuzz@latest github.com/dvyukov/go-fuzz/go-fuzz-build@latest
-RUN GO_ENABLED=0 go-fuzz-build -libfuzzer -o /decoder-fuzz.a .
+WORKDIR /src
+COPY . /src/go-plist
+COPY mayhem/fuzz_native_test.go /src/go-plist/fuzz_native_test.go
 
-FROM silkeh/clang:latest as sanitizer
-COPY --from=gofuzzbuilder /decoder-fuzz.a decoder-fuzz.a
-RUN clang -fsanitize=fuzzer /decoder-fuzz.a -o /decoder-fuzz.libfuzzer
+WORKDIR /src/go-plist
+RUN go test -c -fuzz=FuzzDecode -o /decoder-fuzz.libfuzzer .
 
 FROM ubuntu:20.04
-COPY --from=sanitizer /decoder-fuzz.libfuzzer /
+COPY --from=builder /decoder-fuzz.libfuzzer /decoder-fuzz.libfuzzer
